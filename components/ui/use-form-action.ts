@@ -1,6 +1,7 @@
 "use client";
 
-import { startTransition, useActionState, type FormEvent } from "react";
+import { startTransition, useActionState, useEffect, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { initialActionState, type ActionResult } from "@/lib/action-result";
 
 /**
@@ -11,6 +12,11 @@ export function useFormAction<T>(
   action: (prev: ActionResult<T>, formData: FormData) => Promise<ActionResult<T>>,
 ) {
   const [state, dispatch, pending] = useActionState(action, initialActionState as ActionResult<T>);
+  const router = useRouter();
+  // Re-render server components after a successful mutation.
+  useEffect(() => {
+    if (state.ok) router.refresh();
+  }, [state, router]);
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
