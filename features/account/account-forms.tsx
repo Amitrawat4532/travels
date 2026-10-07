@@ -9,7 +9,7 @@ import { changePasswordAction, updateProfileAction } from "@/features/auth/actio
 export function ProfileForm({ name, phone, email }: { name: string; phone: string; email: string }) {
   const { onSubmit, pending, error, fieldErrors, state } = useFormAction(updateProfileAction);
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form method="post" onSubmit={onSubmit} className="space-y-4">
       {state.ok && state.message && <Alert tone="success">{state.message}</Alert>}
       {error && <Alert tone="error">{error}</Alert>}
       <Field label="Full name" htmlFor="name" error={fieldErrors?.name}>
@@ -31,7 +31,7 @@ export function ProfileForm({ name, phone, email }: { name: string; phone: strin
 export function PasswordForm() {
   const { onSubmit, pending, error, fieldErrors, state } = useFormAction(changePasswordAction);
   return (
-    <form onSubmit={onSubmit} className="space-y-4" key={state.ok ? "done" : "form"}>
+    <form method="post" onSubmit={onSubmit} className="space-y-4" key={state.ok ? "done" : "form"}>
       {state.ok && state.message && <Alert tone="success">{state.message}</Alert>}
       {error && <Alert tone="error">{error}</Alert>}
       <Field label="Current password" htmlFor="currentPassword" error={fieldErrors?.currentPassword}>

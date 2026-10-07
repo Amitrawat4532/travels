@@ -22,7 +22,7 @@ export function ReviewForm({ bookingId, driverName }: { bookingId: string; drive
 
   const shown = hover || rating;
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form method="post" onSubmit={onSubmit} className="space-y-4">
       <input type="hidden" name="bookingId" value={bookingId} />
       <input type="hidden" name="rating" value={rating || ""} />
       <fieldset>

@@ -9,9 +9,9 @@ import { requirePageUser } from "@/auth/guards";
 import { BookingForm } from "@/features/booking/booking-form";
 import { Skeleton, EmptyState } from "@/components/ui/misc";
 import { LinkButton } from "@/components/ui/button";
-import { BOOKING_CUTOFF_MINUTES, VEHICLE_TYPE_LABELS } from "@/lib/constants";
+import { VEHICLE_TYPE_LABELS } from "@/lib/constants";
 import { getPaymentProvider } from "@/server/payments";
-import { cancellationPolicyText } from "@/server/services/bookings";
+import { cancellationPolicyText, isBookingWindowOpen } from "@/server/services/bookings";
 
 export const metadata: Metadata = { title: "Complete booking", robots: { index: false } };
 
@@ -54,7 +54,7 @@ async function BookContent({
   const open =
     trip.status === "SCHEDULED" &&
     trip.driver.status === "VERIFIED" &&
-    trip.departureAt.getTime() - BOOKING_CUTOFF_MINUTES * 60_000 > Date.now();
+    isBookingWindowOpen(trip.departureAt);
   if (!open) {
     return (
       <EmptyState

@@ -23,7 +23,7 @@ export function OnboardingForm({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6" noValidate encType="multipart/form-data">
+    <form method="post" onSubmit={onSubmit} className="space-y-6" noValidate encType="multipart/form-data">
       {error && <Alert tone="error">{error}</Alert>}
 
       <Card>

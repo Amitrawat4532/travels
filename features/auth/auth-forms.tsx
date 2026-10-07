@@ -39,7 +39,7 @@ export function LoginForm({ next, demo }: { next?: string; demo?: { password: st
   const { onSubmit, pending, fieldErrors: fe, error } = useFormAction(loginAction);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4" noValidate>
+    <form method="post" onSubmit={onSubmit} className="space-y-4" noValidate>
       {next && <input type="hidden" name="next" value={next} />}
       {error && <Alert tone="error">{error}</Alert>}
       <Field label="Email" htmlFor="email" error={fe?.email}>
@@ -96,7 +96,7 @@ export function RegisterForm({ defaultRole = "PASSENGER", next }: { defaultRole?
   const [role, setRole] = useState(defaultRole);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4" noValidate>
+    <form method="post" onSubmit={onSubmit} className="space-y-4" noValidate>
       {next && <input type="hidden" name="next" value={next} />}
       <input type="hidden" name="role" value={role} />
       <fieldset>

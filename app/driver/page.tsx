@@ -50,12 +50,12 @@ async function Content({ searchParams }: { searchParams: PageProps<"/driver">["s
         </Alert>
       )}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
         <StatCard label="Upcoming trips" value={stats.upcoming} icon={<CalendarClock className="size-4" />} />
         <StatCard label="Total passengers" value={stats.passengers} icon={<Users className="size-4" />} />
         <StatCard label="Seats sold" value={stats.seatsSold} icon={<Ticket className="size-4" />} />
         <StatCard label="Total earnings" value={formatPaise(stats.earningsPaise)} hint="Completed trips" icon={<IndianRupee className="size-4" />} />
-        <StatCard label="Cancellation rate" value={`${stats.cancellationRate}%`} hint={`${stats.totalTrips} trips total`} icon={<Percent className="size-4" />} className="col-span-2 lg:col-span-1" />
+        <StatCard label="Cancellation rate" value={`${stats.cancellationRate}%`} hint={`${stats.totalTrips} trips total`} icon={<Percent className="size-4" />} className="col-span-2 sm:col-span-1" />
       </div>
 
       <section className="mt-8">

@@ -100,6 +100,6 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
       .catch(() => undefined);
   }
 
-  const { status: _status, ...user } = session.user;
-  return user;
+  const { id, name, email, phone, role, avatarKey } = session.user;
+  return { id, name, email, phone, role, avatarKey };
 });

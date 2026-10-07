@@ -72,7 +72,7 @@ export function VehicleFields({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+    <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Vehicle registration number" htmlFor="registrationNumber" error={errors?.registrationNumber} hint="As on RC, e.g. UK07TA4521">
           <Input
@@ -159,7 +159,7 @@ export function VehicleFields({
         </div>
       </div>
 
-      <div className="lg:sticky lg:top-6 lg:self-start">
+      <div className="order-first mx-auto w-full max-w-md xl:sticky xl:top-6 xl:order-none xl:self-start">
         <p className="mb-2 text-sm font-medium text-ink-2">Your vehicle</p>
         <VehicleVisual
           type={type}

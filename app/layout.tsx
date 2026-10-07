@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Instrument_Serif, Plus_Jakarta_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/toast";
 import { APP_NAME, SITE_URL } from "@/lib/constants";
 import "./globals.css";
@@ -7,6 +7,14 @@ import "./globals.css";
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const display = Instrument_Serif({
+  variable: "--font-display-serif",
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
   display: "swap",
 });
 
@@ -32,7 +40,6 @@ export const metadata: Metadata = {
     locale: "en_IN",
     title: `${APP_NAME} — shared taxi seats across Uttarakhand`,
     description: "Verified local drivers. Real-time seat availability. Book your seat from Dehradun to Rudraprayag and back.",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: APP_NAME }],
   },
   twitter: { card: "summary_large_image" },
   formatDetection: { telephone: false },
@@ -46,7 +53,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-IN" className={`${jakarta.variable} h-full antialiased`}>
+    <html lang="en-IN" className={`${jakarta.variable} ${display.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {children}
         <Toaster />

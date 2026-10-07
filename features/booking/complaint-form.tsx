@@ -21,7 +21,7 @@ export function ComplaintForm({ bookingId, compact }: { bookingId?: string; comp
     );
   }
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <form method="post" onSubmit={onSubmit} className="space-y-3">
       {bookingId && <input type="hidden" name="bookingId" value={bookingId} />}
       {error && <Alert tone="error">{error}</Alert>}
       <Field label="Subject" htmlFor="c-subject" error={fieldErrors?.subject}>

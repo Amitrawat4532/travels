@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { ChevronDown, LayoutDashboard, LogOut, Ticket, User } from "lucide-react";
 import { Avatar } from "@/components/ui/misc";
 import { logoutAction } from "@/features/auth/actions";
@@ -10,9 +9,6 @@ import { logoutAction } from "@/features/auth/actions";
 export function UserMenu({ name, home, role }: { name: string; home: string; role: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-
-  useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
@@ -49,15 +45,15 @@ export function UserMenu({ name, home, role }: { name: string; home: string; rol
             <p className="truncate text-sm font-semibold">{name}</p>
             <p className="text-xs text-muted capitalize">{role.toLowerCase()}</p>
           </div>
-          <Link role="menuitem" href={home} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-paper-2">
+          <Link onClick={() => setOpen(false)} role="menuitem" href={home} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-paper-2">
             <LayoutDashboard className="size-4 text-muted" /> Dashboard
           </Link>
           {role === "PASSENGER" && (
-            <Link role="menuitem" href="/passenger/bookings" className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-paper-2">
+            <Link onClick={() => setOpen(false)} role="menuitem" href="/passenger/bookings" className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-paper-2">
               <Ticket className="size-4 text-muted" /> My bookings
             </Link>
           )}
-          <Link role="menuitem" href={`${home}/profile`} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-paper-2">
+          <Link onClick={() => setOpen(false)} role="menuitem" href={`${home}/profile`} className="flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-paper-2">
             <User className="size-4 text-muted" /> Profile
           </Link>
           <form action={logoutAction}>

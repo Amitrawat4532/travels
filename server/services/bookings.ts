@@ -35,6 +35,11 @@ export function segmentFarePaise(
   return Math.max(drop.fareFromOriginPaise - boarding.fareFromOriginPaise, 0);
 }
 
+/** Can seats still be booked on a trip departing at `departureAt`? */
+export function isBookingWindowOpen(departureAt: Date, now = new Date()): boolean {
+  return departureAt.getTime() - BOOKING_CUTOFF_MINUTES * 60_000 > now.getTime();
+}
+
 export function priceBreakdown(farePerSeatPaise: number, seats: number) {
   const fareTotalPaise = farePerSeatPaise * seats;
   const platformFeePaise = PLATFORM_FEE_PER_SEAT_PAISE * seats;

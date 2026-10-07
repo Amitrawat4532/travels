@@ -56,7 +56,7 @@ export function EditTripForm({
   }
 
   return (
-    <form onSubmit={submit} className="max-w-2xl space-y-5" noValidate>
+    <form method="post" onSubmit={submit} className="max-w-2xl space-y-5" noValidate>
       {hasBookings && (
         <Alert tone="warning" title="Passengers have booked this trip">
           If you change the time or pickup/drop point, every passenger is notified and can cancel for free.

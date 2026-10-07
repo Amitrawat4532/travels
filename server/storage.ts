@@ -16,7 +16,7 @@ export interface StorageProvider {
   remove(key: string): Promise<void>;
 }
 
-const ROOT = path.resolve(process.env.STORAGE_DIR ?? "./storage");
+const ROOT = path.resolve(/*turbopackIgnore: true*/ process.env.STORAGE_DIR ?? "./storage");
 
 function resolveKey(key: string): string {
   const full = path.resolve(ROOT, key);
@@ -27,18 +27,18 @@ function resolveKey(key: string): string {
 class LocalDiskStorage implements StorageProvider {
   async put(key: string, data: Buffer) {
     const full = resolveKey(key);
-    await mkdir(path.dirname(full), { recursive: true });
-    await writeFile(full, data);
+    await mkdir(/*turbopackIgnore: true*/ path.dirname(full), { recursive: true });
+    await writeFile(/*turbopackIgnore: true*/ full, data);
   }
   async get(key: string) {
     try {
-      return await readFile(resolveKey(key));
+      return await readFile(/*turbopackIgnore: true*/ resolveKey(key));
     } catch {
       return null;
     }
   }
   async remove(key: string) {
-    await unlink(resolveKey(key)).catch(() => undefined);
+    await unlink(/*turbopackIgnore: true*/ resolveKey(key)).catch(() => undefined);
   }
 }
 

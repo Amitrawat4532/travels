@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, Rocket } from "lucide-react";
 import type { VehicleType } from "@prisma/client";
@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Alert, KeyValue } from "@/components/ui/misc";
 import { toast } from "@/components/ui/toast";
 import { VEHICLE_TYPE_LABELS } from "@/lib/constants";
-import { formatDateLong, formatDuration, formatPaise, formatTime, istToDate, toIstDateString } from "@/lib/format";
+import { formatDateLong, formatDuration, formatPaise, formatTime, istToDate } from "@/lib/format";
+import { addDaysToDateString, useClientToday } from "@/lib/use-client-today";
 import type { FieldErrors } from "@/lib/action-result";
 import { createTripAction } from "./actions";
 import { VehicleVisual } from "@/features/vehicles/vehicle-visual";
@@ -51,6 +52,10 @@ function defaultStops(route: RouteOption, price: number): StopState[] {
   }));
 }
 
+function isAtLeastHourAhead(d: Date) {
+  return d.getTime() >= Date.now() + 60 * 60_000;
+}
+
 export function TripForm({ routes, vehicles }: { routes: RouteOption[]; vehicles: VehicleOption[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
@@ -59,8 +64,10 @@ export function TripForm({ routes, vehicles }: { routes: RouteOption[]; vehicles
   const route = routes.find((r) => r.id === routeId)!;
   const [vehicleId, setVehicleId] = useState(vehicles[0]?.id ?? "");
   const vehicle = vehicles.find((v) => v.id === vehicleId)!;
-  const [date, setDate] = useState("");
-  const [minDate, setMinDate] = useState<string>();
+  const today = useClientToday();
+  const [pickedDate, setDate] = useState("");
+  const date = pickedDate || (today ? addDaysToDateString(today, 1) : "");
+  const minDate = today || undefined;
   const [time, setTime] = useState("07:00");
   const [duration, setDuration] = useState(route?.durationMinutes ?? 300);
   const [boardingPoint, setBoardingPoint] = useState(route?.boardingSuggestions[0] ?? "");
@@ -72,12 +79,6 @@ export function TripForm({ routes, vehicles }: { routes: RouteOption[]; vehicles
   const [stops, setStops] = useState<StopState[]>(() => (route ? defaultStops(route, price) : []));
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-
-  useEffect(() => {
-    const now = new Date();
-    setMinDate(toIstDateString(now));
-    setDate(toIstDateString(new Date(now.getTime() + 86_400_000)));
-  }, []);
 
   function changeRoute(id: string) {
     const r = routes.find((x) => x.id === id)!;
@@ -123,7 +124,7 @@ export function TripForm({ routes, vehicles }: { routes: RouteOption[]; vehicles
     e.preventDefault();
     setError(null);
     if (!date) return setError("Choose a travel date.");
-    if (departure && departure.getTime() < Date.now() + 60 * 60_000) return setError("Departure must be at least 1 hour from now.");
+    if (departure && !isAtLeastHourAhead(departure)) return setError("Departure must be at least 1 hour from now.");
     setStep("preview");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -213,7 +214,7 @@ export function TripForm({ routes, vehicles }: { routes: RouteOption[]; vehicles
   }
 
   return (
-    <form onSubmit={toPreview} className="space-y-5" noValidate>
+    <form method="post" onSubmit={toPreview} className="space-y-5" noValidate>
       {error && <Alert tone="error">{error}</Alert>}
       <Card>
         <CardHeader title="Route & vehicle" />

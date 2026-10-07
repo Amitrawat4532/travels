@@ -34,7 +34,7 @@ export function RideCard({
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-line bg-white shadow-card transition-shadow hover:shadow-lift",
+        "group relative overflow-hidden rounded-2xl border border-line bg-white shadow-card transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-forest-300 hover:shadow-lift motion-reduce:hover:translate-y-0",
         soldOut && "opacity-70",
       )}
     >
@@ -92,6 +92,12 @@ export function RideCard({
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Badge tone={soldOut ? "red" : low ? "amber" : "green"}>
+            {!soldOut && (
+              <span className="relative flex size-1.5" aria-hidden>
+                <span className={cn("absolute inline-flex size-full animate-ping rounded-full opacity-70", low ? "bg-marigold-500" : "bg-forest-500")} />
+                <span className={cn("relative inline-flex size-1.5 rounded-full", low ? "bg-marigold-500" : "bg-forest-500")} />
+              </span>
+            )}
             <Users className="size-3.5" aria-hidden />
             {soldOut ? "Not enough seats" : `${ride.availableSeats} of ${ride.totalSeats} seats left`}
           </Badge>
@@ -129,7 +135,7 @@ export function RideCard({
         </div>
         <Link
           href={href}
-          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-forest-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-forest-800 after:absolute after:inset-0"
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-forest-700 px-4 text-sm font-semibold text-white transition-colors group-hover:bg-forest-800 after:absolute after:inset-0 [&>svg]:transition-transform group-hover:[&>svg]:translate-x-0.5"
           aria-label={`View ride with ${ride.driver.name} at ${formatTime(ride.boarding.at)}`}
         >
           View Ride <ArrowRight className="size-4" aria-hidden />

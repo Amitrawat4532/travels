@@ -2,6 +2,7 @@
 
 @theme {
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-serif), ui-serif, Georgia, serif;
 
   --color-paper: #faf8f3;
   --color-paper-2: #f3f0e8;
@@ -39,6 +40,17 @@
   --shadow-lift: 0 2px 4px rgb(29 35 38 / 0.05), 0 16px 32px -12px rgb(21 56 39 / 0.22);
 
   --animate-fade-in: fade-in 0.25s ease-out both;
+  --animate-rise: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
   @keyframes fade-in {
     from {
       opacity: 0;

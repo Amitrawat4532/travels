@@ -9,7 +9,7 @@ import { updateDriverAboutAction } from "./actions";
 export function DriverAboutForm({ bio, languages, yearsExperience }: { bio: string; languages: string; yearsExperience: number }) {
   const { onSubmit, pending, error, fieldErrors, state } = useFormAction(updateDriverAboutAction);
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form method="post" onSubmit={onSubmit} className="space-y-4">
       {state.ok && <Alert tone="success">{state.message}</Alert>}
       {error && <Alert tone="error">{error}</Alert>}
       <Field label="Profile photo" htmlFor="profilePhoto" hint="Clear face photo · JPG/PNG/WEBP · max 5 MB">

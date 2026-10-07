@@ -26,7 +26,7 @@ export function AddVehicleForm() {
     );
   }
   return (
-    <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-line bg-white p-5 shadow-card" noValidate>
+    <form method="post" onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-line bg-white p-5 shadow-card" noValidate>
       <h2 className="text-lg font-bold">Add a vehicle</h2>
       {error && <Alert tone="error">{error}</Alert>}
       <VehicleFields errors={fieldErrors} />
@@ -47,7 +47,7 @@ export function AddPhotosForm({ vehicleId, remaining }: { vehicleId: string; rem
   const [count, setCount] = useState(0);
   if (remaining <= 0) return null;
   return (
-    <form onSubmit={onSubmit} className="flex flex-wrap items-center gap-2" key={state.ok ? state.message : "f"}>
+    <form method="post" onSubmit={onSubmit} className="flex flex-wrap items-center gap-2" key={state.ok ? state.message : "f"}>
       <input type="hidden" name="vehicleId" value={vehicleId} />
       <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-dashed border-forest-300 px-3 text-sm font-semibold text-forest-700 hover:bg-forest-50">
         <ImagePlus className="size-4" aria-hidden />

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUpDown, Calendar, MapPin, Minus, Navigation, Plus, Search, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MAX_SEATS_PER_BOOKING } from "@/lib/constants";
-import { toIstDateString } from "@/lib/format";
+import { addDaysToDateString, useClientToday } from "@/lib/use-client-today";
 import { cn } from "@/lib/utils";
 
 export type LocationOption = { name: string; slug: string };
@@ -21,17 +21,13 @@ export function SearchForm({ locations, defaults, variant = "hero" }: Props) {
   const [pending, start] = useTransition();
   const [from, setFrom] = useState(defaults?.from ?? "dehradun");
   const [to, setTo] = useState(defaults?.to ?? "rudraprayag");
-  const [date, setDate] = useState(defaults?.date ?? "");
-  const [minDate, setMinDate] = useState<string>();
+  const today = useClientToday();
+  const [pickedDate, setDate] = useState(defaults?.date ?? "");
+  // Default to tomorrow once the visitor's clock is known (client only).
+  const date = pickedDate || (today ? addDaysToDateString(today, 1) : "");
+  const minDate = today || undefined;
   const [passengers, setPassengers] = useState(defaults?.passengers ?? 1);
   const [error, setError] = useState<string | null>(null);
-
-  // Dates depend on the visitor's clock, so set them after hydration.
-  useEffect(() => {
-    const now = new Date();
-    setMinDate(toIstDateString(now));
-    if (!defaults?.date) setDate(toIstDateString(new Date(now.getTime() + 86_400_000)));
-  }, [defaults?.date]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,11 +44,13 @@ export function SearchForm({ locations, defaults, variant = "hero" }: Props) {
   return (
     <form
       onSubmit={submit}
+      action="/search"
+      method="get"
       role="search"
       aria-label="Search rides"
       className={cn(
         "rounded-3xl bg-white",
-        compact ? "border border-line p-3 shadow-card sm:p-4" : "p-3 shadow-lift ring-1 ring-forest-900/5 sm:p-4",
+        compact ? "border border-line p-3 shadow-card sm:p-4" : "bg-white/80 p-3 shadow-[0_30px_60px_-30px_rgba(15,41,29,0.45)] ring-1 ring-white/70 backdrop-blur-xl sm:p-4",
       )}
     >
       <div className={cn("grid gap-2", compact ? "md:grid-cols-[1fr_auto_1fr_0.9fr_0.6fr_auto]" : "lg:grid-cols-[1fr_auto_1fr_0.9fr_0.6fr_auto]")}>
@@ -71,12 +69,13 @@ export function SearchForm({ locations, defaults, variant = "hero" }: Props) {
           </button>
         </div>
         <LocationSelect id="to" label="To" icon={<MapPin className="size-4" />} value={to} onChange={setTo} locations={locations} />
-        <label htmlFor="date" className="group flex flex-col rounded-2xl border border-line px-4 py-2.5 transition-colors focus-within:border-forest-400 focus-within:ring-4 focus-within:ring-forest-100">
+        <label htmlFor="date" className="group flex flex-col rounded-2xl border border-line bg-white/70 px-4 py-2.5 transition-all duration-200 hover:border-forest-300 focus-within:border-forest-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-forest-100">
           <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted uppercase">
             <Calendar className="size-3.5" aria-hidden /> Date
           </span>
           <input
             id="date"
+            name="date"
             type="date"
             value={date}
             min={minDate}
@@ -84,7 +83,7 @@ export function SearchForm({ locations, defaults, variant = "hero" }: Props) {
             className="mt-0.5 w-full bg-transparent text-[15px] font-semibold text-ink outline-none"
           />
         </label>
-        <div className="flex flex-col rounded-2xl border border-line px-4 py-2.5">
+        <div className="flex flex-col rounded-2xl border border-line bg-white/70 px-4 py-2.5">
           <span id="pax-label" className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted uppercase">
             <Users className="size-3.5" aria-hidden /> Passengers
           </span>
@@ -101,6 +100,7 @@ export function SearchForm({ locations, defaults, variant = "hero" }: Props) {
             <span className="text-[15px] font-semibold tabular-nums" aria-live="polite">
               {passengers}
             </span>
+            <input type="hidden" name="passengers" value={passengers} />
             <button
               type="button"
               onClick={() => setPassengers((p) => Math.min(MAX_SEATS_PER_BOOKING, p + 1))}
@@ -112,8 +112,17 @@ export function SearchForm({ locations, defaults, variant = "hero" }: Props) {
             </button>
           </div>
         </div>
-        <Button type="submit" size="lg" loading={pending} className={cn("h-auto min-h-14 rounded-2xl px-6 text-base", compact ? "md:min-w-32" : "lg:min-w-40")}>
-          {!pending && <Search className="size-5" aria-hidden />}
+        <Button
+          type="submit"
+          size="lg"
+          loading={pending}
+          className={cn(
+            "group relative h-auto min-h-14 overflow-hidden rounded-2xl px-6 text-base",
+            "before:absolute before:inset-y-0 before:-left-1/2 before:w-1/2 before:-skew-x-12 before:bg-white/15 before:transition-transform before:duration-700 hover:before:translate-x-[300%]",
+            compact ? "md:min-w-32" : "lg:min-w-40",
+          )}
+        >
+          {!pending && <Search className="size-5 transition-transform duration-300 group-hover:scale-110" aria-hidden />}
           Search Rides
         </Button>
       </div>
@@ -142,7 +151,7 @@ function LocationSelect({
   locations: LocationOption[];
 }) {
   return (
-    <label htmlFor={id} className="flex flex-col rounded-2xl border border-line px-4 py-2.5 transition-colors focus-within:border-forest-400 focus-within:ring-4 focus-within:ring-forest-100">
+    <label htmlFor={id} className="flex flex-col rounded-2xl border border-line bg-white/70 px-4 py-2.5 transition-all duration-200 hover:border-forest-300 focus-within:border-forest-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-forest-100">
       <span className="flex items-center gap-1.5 text-[11px] font-semibold tracking-wider text-muted uppercase">
         <span className="text-forest-500" aria-hidden>
           {icon}
@@ -151,6 +160,7 @@ function LocationSelect({
       </span>
       <select
         id={id}
+        name={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-0.5 w-full cursor-pointer appearance-none bg-transparent text-[17px] font-bold text-ink outline-none"

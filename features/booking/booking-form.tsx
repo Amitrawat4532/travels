@@ -102,7 +102,7 @@ export function BookingForm({
   }
 
   return (
-    <form onSubmit={submit} className="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_360px]" noValidate>
+    <form method="post" onSubmit={submit} className="mt-6 grid items-start gap-6 lg:grid-cols-[1fr_360px]" noValidate>
       <div className="space-y-5">
         {error && (
           <Alert tone="error" title="Booking not completed">

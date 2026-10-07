@@ -72,18 +72,18 @@ export function BarChart({
           })}
         </div>
       </div>
-      <div className="mt-1.5 flex gap-[2px]" aria-hidden>
-        {data.map((d, i) => (
-          <span
-            key={d.label}
-            className={cn(
-              "flex-1 truncate text-center text-[11px] text-muted",
-              data.length > 12 && i % Math.ceil(data.length / 8) !== 0 && "invisible",
-            )}
-          >
-            {d.label}
-          </span>
-        ))}
+      <div className="mt-1.5 flex h-4 gap-[2px]" aria-hidden>
+        {data.map((d, i) => {
+          const step = data.length > 12 ? Math.ceil(data.length / 6) : 1;
+          const show = i % step === 0 || i === data.length - 1;
+          return (
+            <span key={d.label} className="relative flex-1">
+              {show && (
+                <span className="absolute left-1/2 -translate-x-1/2 text-[11px] whitespace-nowrap text-muted">{d.label}</span>
+              )}
+            </span>
+          );
+        })}
       </div>
       <figcaption className="sr-only">{caption}</figcaption>
       <table className="sr-only">

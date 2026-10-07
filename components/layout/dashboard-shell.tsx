@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -28,7 +28,6 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { logoutAction } from "@/features/auth/actions";
 import { Logo } from "./brand";
 
@@ -66,6 +65,30 @@ function isActive(pathname: string, item: NavItem) {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
+/** Most specific match wins (so /driver/trips/new highlights "Create trip", not "My trips"). */
+function activeHref(nav: NavItem[], pathname: string) {
+  return [...nav].filter((n) => isActive(pathname, n)).sort((a, b) => b.href.length - a.href.length)[0]?.href;
+}
+
+/**
+ * usePathname() is request-time data under Cache Components, so it lives in a
+ * tiny component inside <Suspense>. Links render statically and this marks the
+ * active ones with aria-current after hydration (styled via aria-[current=page]).
+ */
+function ActiveNavMarker({ nav, onNavigate }: { nav: NavItem[]; onNavigate: () => void }) {
+  const pathname = usePathname();
+  useEffect(() => {
+    const active = activeHref(nav, pathname);
+    document.querySelectorAll<HTMLAnchorElement>("a[data-nav-href]").forEach((a) => {
+      if (a.dataset.navHref === active) a.setAttribute("aria-current", "page");
+      else a.removeAttribute("aria-current");
+    });
+    onNavigate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only react to route changes
+  }, [pathname, nav]);
+  return null;
+}
+
 export function DashboardShell({
   title,
   nav,
@@ -77,19 +100,15 @@ export function DashboardShell({
   userSlot?: ReactNode;
   children: ReactNode;
 }) {
-  const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  useEffect(() => setMoreOpen(false), [pathname]);
-
-  // Most specific match wins (so /driver/trips/new highlights "Create trip", not "My trips").
-  const active = [...nav]
-    .filter((n) => isActive(pathname, n))
-    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
-
   const mobileItems = nav.filter((n) => n.mobile).slice(0, 4);
 
   return (
     <div className="min-h-dvh bg-paper">
+      <Suspense fallback={null}>
+        <ActiveNavMarker nav={nav} onNavigate={() => setMoreOpen(false)} />
+      </Suspense>
+
       {/* Desktop sidebar */}
       <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-line bg-white lg:flex">
         <div className="flex h-16 items-center px-5">
@@ -99,18 +118,14 @@ export function DashboardShell({
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2" aria-label={`${title} navigation`}>
           {nav.map((item) => {
             const Icon = ICONS[item.icon];
-            const on = active === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                aria-current={on ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14.5px] font-medium transition-colors",
-                  on ? "bg-forest-50 text-forest-800" : "text-ink-2 hover:bg-paper-2",
-                )}
+                data-nav-href={item.href}
+                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14.5px] font-medium text-ink-2 transition-colors hover:bg-paper-2 aria-[current=page]:bg-forest-50 aria-[current=page]:text-forest-800"
               >
-                <Icon className={cn("size-[18px]", on ? "text-forest-600" : "text-muted")} aria-hidden />
+                <Icon className="size-[18px] text-muted group-aria-[current=page]:text-forest-600" aria-hidden />
                 {item.label}
               </Link>
             );
@@ -132,11 +147,9 @@ export function DashboardShell({
       {/* Mobile top bar */}
       <header className="no-print sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur lg:hidden">
         <Logo className="[&_svg]:size-8 [&_span]:text-[17px]" />
-        <div className="flex items-center gap-1">
-          <Link href="/notifications" aria-label="Notifications" className="flex size-10 items-center justify-center rounded-full text-ink-2 hover:bg-paper-2">
-            <Bell className="size-5" />
-          </Link>
-        </div>
+        <Link href="/notifications" aria-label="Notifications" className="flex size-10 items-center justify-center rounded-full text-ink-2 hover:bg-paper-2">
+          <Bell className="size-5" />
+        </Link>
       </header>
 
       <main className="pb-24 lg:pb-10 lg:pl-64 print:p-0">
@@ -151,16 +164,12 @@ export function DashboardShell({
         <div className="grid grid-cols-5">
           {mobileItems.map((item) => {
             const Icon = ICONS[item.icon];
-            const on = active === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                aria-current={on ? "page" : undefined}
-                className={cn(
-                  "flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium",
-                  on ? "text-forest-700" : "text-muted",
-                )}
+                data-nav-href={item.href}
+                className="flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-muted aria-[current=page]:text-forest-700"
               >
                 <Icon className="size-[22px]" aria-hidden />
                 <span className="max-w-full truncate px-1">{item.label}</span>
@@ -194,15 +203,12 @@ export function DashboardShell({
             <div className="grid grid-cols-3 gap-2">
               {nav.map((item) => {
                 const Icon = ICONS[item.icon];
-                const on = active === item.href;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 text-center text-xs font-medium",
-                      on ? "border-forest-300 bg-forest-50 text-forest-800" : "border-line text-ink-2",
-                    )}
+                    onClick={() => setMoreOpen(false)}
+                    className="flex flex-col items-center gap-1.5 rounded-2xl border border-line px-2 py-3 text-center text-xs font-medium text-ink-2"
                   >
                     <Icon className="size-5" aria-hidden />
                     {item.label}
