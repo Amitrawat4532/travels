@@ -1,0 +1,625 @@
+// Pahadi Seat — hyperlocal shared-seat booking for Uttarakhand.
+// Money is always stored in paise (Int) to avoid floating point errors and to
+// match payment gateway conventions (Razorpay / Stripe).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum Role {
+  PASSENGER
+  DRIVER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum DriverStatus {
+  DRAFT // registered, documents not yet submitted
+  PENDING // submitted, waiting for admin review
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum VehicleStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VehicleType {
+  HATCHBACK
+  SEDAN
+  SUV
+  BOLERO
+  SUMO
+  ERTIGA
+  INNOVA
+  TEMPO_TRAVELLER
+  MINI_BUS
+}
+
+enum DocumentType {
+  PROFILE_PHOTO
+  DRIVING_LICENCE
+  VEHICLE_RC
+  INSURANCE
+  PERMIT
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum SeatStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED // driver kept it for own use / offline passenger
+}
+
+enum BookingStatus {
+  PENDING // created, waiting for online payment (seats held until holdExpiresAt)
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  REFUNDED
+}
+
+enum BoardingStatus {
+  NOT_BOARDED
+  BOARDED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  PAY_TO_DRIVER // dev / MVP mode: pay the driver in cash or UPI at boarding
+  ONLINE // gateway (Razorpay / Stripe) — see server/payments
+}
+
+enum CancelledBy {
+  PASSENGER
+  DRIVER
+  ADMIN
+  SYSTEM
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  TRIP_UPDATED
+  TRIP_CANCELLED
+  TRIP_REMINDER
+  NEW_BOOKING
+  DRIVER_VERIFIED
+  DRIVER_REJECTED
+  VEHICLE_APPROVED
+  VEHICLE_REJECTED
+  RIDE_ALERT
+  TRIP_COMPLETED
+  GENERAL
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum AnalyticsEventType {
+  SEARCH
+  RIDE_VIEW
+  BOOKING_ATTEMPT
+  BOOKING_SUCCESS
+  BOOKING_FAILED
+  BOOKING_CANCELLED
+  TRIP_PUBLISHED
+  SIGNUP
+}
+
+// ───────────────────────────── Identity ─────────────────────────────
+
+model User {
+  id           String     @id @default(uuid()) @db.Uuid
+  name         String
+  email        String     @unique
+  phone        String     @unique
+  passwordHash String
+  role         Role       @default(PASSENGER)
+  status       UserStatus @default(ACTIVE)
+  avatarKey    String? // storage key of profile photo
+  isSeedData   Boolean    @default(false)
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  sessions         Session[]
+  driverProfile    DriverProfile?
+  passengerProfile PassengerProfile?
+  bookings         Booking[]
+  reviews          Review[]
+  notifications    Notification[]
+  adminActions     AdminAction[]     @relation("AdminActor")
+  complaints       Complaint[]
+  rideAlerts       RideAlert[]
+  savedRoutes      SavedRoute[]
+  analyticsEvents  AnalyticsEvent[]
+
+  @@index([role, status])
+  @@index([createdAt])
+}
+
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  // SHA-256 hash of the session token. The raw token only lives in the
+  // httpOnly cookie, so a database leak cannot be replayed as a session.
+  tokenHash  String   @unique
+  userId     String   @db.Uuid
+  expiresAt  DateTime
+  userAgent  String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PassengerProfile {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @unique @db.Uuid
+  homeLocationId   String?  @db.Uuid
+  emergencyContact String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeLocation Location? @relation(fields: [homeLocationId], references: [id])
+}
+
+model DriverProfile {
+  id              String       @id @default(uuid()) @db.Uuid
+  userId          String       @unique @db.Uuid
+  status          DriverStatus @default(DRAFT)
+  licenceNumber   String?
+  licenceExpiry   DateTime?
+  permitNumber    String?
+  permitDetails   String?
+  bio             String?
+  yearsExperience Int?
+  languages       String? // comma separated: "Hindi, Garhwali"
+  baseLocationId  String?      @db.Uuid
+  ratingAvg       Float        @default(0)
+  ratingCount     Int          @default(0)
+  completedTrips  Int          @default(0)
+  rejectionReason String?
+  submittedAt     DateTime?
+  verifiedAt      DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseLocation Location?        @relation(fields: [baseLocationId], references: [id])
+  vehicles     Vehicle[]
+  documents    DriverDocument[]
+  trips        Trip[]
+  reviews      Review[]
+
+  @@index([status])
+}
+
+model Vehicle {
+  id                 String        @id @default(uuid()) @db.Uuid
+  driverId           String        @db.Uuid
+  registrationNumber String        @unique
+  type               VehicleType
+  model              String
+  color              String?
+  seatCapacity       Int // passenger seats, excluding driver
+  hasCarrier         Boolean       @default(true) // luggage carrier on roof
+  photoKeys          String[]      @default([]) // driver-uploaded photos of the actual vehicle
+  isAc               Boolean       @default(false)
+  status             VehicleStatus @default(PENDING)
+  rejectionReason    String?
+  isActive           Boolean       @default(true)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  driver    DriverProfile    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  documents DriverDocument[]
+  trips     Trip[]
+
+  @@index([driverId])
+  @@index([status])
+}
+
+model DriverDocument {
+  id           String         @id @default(uuid()) @db.Uuid
+  driverId     String         @db.Uuid
+  vehicleId    String?        @db.Uuid
+  type         DocumentType
+  fileKey      String // storage key — files are served only through the authenticated file route
+  fileName     String
+  mimeType     String
+  sizeBytes    Int
+  status       DocumentStatus @default(PENDING)
+  reviewerNote String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  driver  DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle Vehicle?      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([vehicleId])
+}
+
+// ───────────────────────────── Geography ─────────────────────────────
+
+model Location {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  slug      String   @unique
+  district  String?
+  // Ready for Google Maps / Mapbox: coordinates are optional for the MVP.
+  latitude  Float?
+  longitude Float?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routesFrom        Route[]            @relation("RouteOrigin")
+  routesTo          Route[]            @relation("RouteDestination")
+  routeStops        RouteStop[]
+  tripStops         TripStop[]
+  passengerProfiles PassengerProfile[]
+  driverProfiles    DriverProfile[]
+  rideAlertsFrom    RideAlert[]        @relation("AlertFrom")
+  rideAlertsTo      RideAlert[]        @relation("AlertTo")
+  savedRoutesFrom   SavedRoute[]       @relation("SavedFrom")
+  savedRoutesTo     SavedRoute[]       @relation("SavedTo")
+}
+
+model Route {
+  id                 String   @id @default(uuid()) @db.Uuid
+  slug               String   @unique
+  originId           String   @db.Uuid
+  destinationId      String   @db.Uuid
+  distanceKm         Int
+  durationMinutes    Int
+  suggestedFarePaise Int
+  isActive           Boolean  @default(true)
+  isPopular          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  origin      Location    @relation("RouteOrigin", fields: [originId], references: [id])
+  destination Location    @relation("RouteDestination", fields: [destinationId], references: [id])
+  stops       RouteStop[]
+  trips       Trip[]
+
+  @@unique([originId, destinationId])
+  @@index([isActive])
+}
+
+// Predefined intermediate stops for a route, in travel order.
+model RouteStop {
+  id                   String @id @default(uuid()) @db.Uuid
+  routeId              String @db.Uuid
+  locationId           String @db.Uuid
+  sequence             Int
+  distanceFromOriginKm Int
+  minutesFromOrigin    Int
+
+  route    Route    @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id])
+
+  @@unique([routeId, sequence])
+  @@unique([routeId, locationId])
+}
+
+// ───────────────────────────── Trips & inventory ─────────────────────────────
+
+model Trip {
+  id                 String     @id @default(uuid()) @db.Uuid
+  driverId           String     @db.Uuid
+  vehicleId          String     @db.Uuid
+  routeId            String     @db.Uuid
+  departureAt        DateTime
+  estimatedArrivalAt DateTime
+  totalSeats         Int
+  pricePerSeatPaise  Int // full-route fare; partial segments use TripStop.fareFromOriginPaise
+  boardingPoint      String // e.g. "ISBT Dehradun, Gate 2"
+  dropPoint          String // e.g. "Rudraprayag Bus Stand"
+  notes              String?
+  cancellationHours  Int        @default(6) // free cancellation until N hours before departure
+  status             TripStatus @default(SCHEDULED)
+  cancelReason       String?
+  cancelledAt        DateTime?
+  startedAt          DateTime?
+  completedAt        DateTime?
+  reminderSentAt     DateTime?
+  isSeedData         Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  driver   DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  vehicle  Vehicle       @relation(fields: [vehicleId], references: [id])
+  route    Route         @relation(fields: [routeId], references: [id])
+  stops    TripStop[]
+  seats    TripSeat[]
+  bookings Booking[]
+
+  @@index([departureAt])
+  @@index([routeId, departureAt])
+  @@index([driverId, departureAt])
+  @@index([status, departureAt])
+}
+
+// Ordered stops actually served by a trip (sequence 0 = origin, last = destination).
+model TripStop {
+  id                  String   @id @default(uuid()) @db.Uuid
+  tripId              String   @db.Uuid
+  locationId          String   @db.Uuid
+  sequence            Int
+  pointName           String // exact pickup/drop landmark
+  scheduledAt         DateTime
+  fareFromOriginPaise Int // cumulative fare from the origin to this stop
+
+  trip        Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  location    Location  @relation(fields: [locationId], references: [id])
+  boardingFor Booking[] @relation("BoardingStop")
+  droppingFor Booking[] @relation("DropStop")
+
+  @@unique([tripId, sequence])
+  @@index([locationId])
+}
+
+// One row per physical seat. Booking a seat is an atomic conditional UPDATE
+// (status = AVAILABLE → BOOKED), which makes overbooking impossible even
+// under concurrent requests.
+model TripSeat {
+  id         String     @id @default(uuid()) @db.Uuid
+  tripId     String     @db.Uuid
+  seatNumber Int
+  status     SeatStatus @default(AVAILABLE)
+  bookingId  String?    @db.Uuid
+  updatedAt  DateTime   @updatedAt
+
+  trip    Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@unique([tripId, seatNumber])
+  @@index([tripId, status])
+  @@index([bookingId])
+}
+
+// ───────────────────────────── Bookings & money ─────────────────────────────
+
+model Booking {
+  id               String         @id @default(uuid()) @db.Uuid
+  code             String         @unique // human friendly: PS-7K3Q9X
+  tripId           String         @db.Uuid
+  userId           String         @db.Uuid
+  boardingStopId   String         @db.Uuid
+  dropStopId       String         @db.Uuid
+  seatCount        Int
+  seatNumbers      Int[]
+  farePerSeatPaise Int
+  fareTotalPaise   Int
+  platformFeePaise Int
+  totalPaise       Int
+  status           BookingStatus  @default(PENDING)
+  boardingStatus   BoardingStatus @default(NOT_BOARDED)
+  holdExpiresAt    DateTime?
+  contactPhone     String
+  cancelledBy      CancelledBy?
+  cancelReason     String?
+  cancelledAt      DateTime?
+  refundablePaise  Int?
+  confirmedAt      DateTime?
+  completedAt      DateTime?
+  isSeedData       Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  trip         Trip               @relation(fields: [tripId], references: [id])
+  user         User               @relation(fields: [userId], references: [id])
+  boardingStop TripStop           @relation("BoardingStop", fields: [boardingStopId], references: [id])
+  dropStop     TripStop           @relation("DropStop", fields: [dropStopId], references: [id])
+  passengers   BookingPassenger[]
+  seats        TripSeat[]
+  payments     Payment[]
+  review       Review?
+  complaints   Complaint[]
+
+  @@index([tripId, status])
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BookingPassenger {
+  id         String  @id @default(uuid()) @db.Uuid
+  bookingId  String  @db.Uuid
+  name       String
+  phone      String
+  seatNumber Int
+  age        Int?
+  gender     String?
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+model Payment {
+  id                String        @id @default(uuid()) @db.Uuid
+  bookingId         String        @db.Uuid
+  provider          String // "pay_to_driver" | "razorpay" | "stripe"
+  method            PaymentMethod
+  status            PaymentStatus @default(PENDING)
+  amountPaise       Int
+  currency          String        @default("INR")
+  providerOrderId   String?       @unique
+  providerPaymentId String?
+  paidAt            DateTime?
+  refundedAt        DateTime?
+  refundAmountPaise Int?
+  rawResponse       Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+model Review {
+  id        String   @id @default(uuid()) @db.Uuid
+  bookingId String   @unique @db.Uuid
+  userId    String   @db.Uuid
+  driverId  String   @db.Uuid
+  rating    Int // 1–5
+  comment   String?
+  isHidden  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  driver  DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId, createdAt])
+}
+
+// ───────────────────────────── Engagement & ops ─────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
+
+model AdminAction {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String   @db.Uuid
+  action     String // e.g. DRIVER_APPROVED, BOOKING_CANCELLED
+  entityType String
+  entityId   String
+  note       String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AdminActor", fields: [adminId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Complaint {
+  id         String          @id @default(uuid()) @db.Uuid
+  userId     String          @db.Uuid
+  bookingId  String?         @db.Uuid
+  subject    String
+  message    String
+  status     ComplaintStatus @default(OPEN)
+  adminNote  String?
+  resolvedAt DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+// "Notify me when a ride becomes available"
+model RideAlert {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  fromId     String    @db.Uuid
+  toId       String    @db.Uuid
+  travelDate DateTime  @db.Date
+  notifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  from Location @relation("AlertFrom", fields: [fromId], references: [id])
+  to   Location @relation("AlertTo", fields: [toId], references: [id])
+
+  @@unique([userId, fromId, toId, travelDate])
+  @@index([fromId, toId, travelDate])
+}
+
+model SavedRoute {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  fromId    String   @db.Uuid
+  toId      String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  from Location @relation("SavedFrom", fields: [fromId], references: [id])
+  to   Location @relation("SavedTo", fields: [toId], references: [id])
+
+  @@unique([userId, fromId, toId])
+}
+
+model AnalyticsEvent {
+  id        String             @id @default(uuid()) @db.Uuid
+  type      AnalyticsEventType
+  userId    String?            @db.Uuid
+  tripId    String?            @db.Uuid
+  routeKey  String? // "dehradun__rudraprayag"
+  value     Int? // e.g. booking value in paise or seat count
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([routeKey])
+}
