@@ -70,7 +70,7 @@ export function SeatMap({
                           ? onToggle
                             ? "border-forest-300 bg-white text-forest-800 hover:border-forest-600 hover:bg-forest-50"
                             : "border-forest-300 bg-white text-forest-800"
-                          : "cursor-not-allowed border-line bg-paper-2 text-muted/60 line-through",
+                          : cn("cursor-not-allowed border-line bg-paper-2", renderLabel ? "text-[13px] text-ink-2" : "text-muted/60 line-through"),
                   )}
                 >
                   {renderLabel ? renderLabel(seat) : seat.seatNumber}

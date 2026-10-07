@@ -7,8 +7,8 @@ import { formatDuration, formatPaise, formatTime, relativeDayLabel } from "@/lib
 import { cn, maskVehicleNumber } from "@/lib/utils";
 import type { RideSummary } from "@/server/queries/rides";
 
-export function driverAvatarSrc(driverId: string, avatarKey: string | null) {
-  return avatarKey ? `/api/avatars/${driverId}` : null;
+export function driverAvatarSrc(_driverId: string, avatarKey: string | null) {
+  return avatarKey ? `/api/files/${avatarKey}` : null;
 }
 
 export function RideCard({
