@@ -3,7 +3,7 @@ import { SITE_URL } from "@/lib/constants";
 
 // Launch routes are listed statically so the sitemap never depends on the
 // database at build time. Add new corridors here when they go live.
-const ROUTE_SLUGS = ["dehradun-to-rudraprayag", "rudraprayag-to-dehradun", "dehradun-to-srinagar", "srinagar-to-dehradun"];
+const ROUTE_SLUGS = ["dehradun-to-chamoli", "chamoli-to-dehradun", "dehradun-to-rudraprayag", "rudraprayag-to-dehradun", "dehradun-to-srinagar", "srinagar-to-dehradun"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const pages = ["", "/search", "/routes", "/drive", "/about", "/help", "/contact", "/register", "/terms", "/privacy"];

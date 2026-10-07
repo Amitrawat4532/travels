@@ -4,17 +4,31 @@ import { db } from "@/server/db";
 import { BOOKING_CUTOFF_MINUTES } from "@/lib/constants";
 import { istDayRange } from "@/lib/format";
 import { segmentFarePaise } from "@/server/services/bookings";
+import { withDemo } from "@/server/demo";
+import { DEMO_LOCATIONS, DEMO_ROUTES, demoTrips } from "@/server/demo-data";
 
 export async function getActiveLocations() {
-  return db.location.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, slug: true, district: true },
-  });
+  return withDemo(
+    () =>
+      db.location.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, slug: true, district: true },
+      }),
+    () =>
+      [...DEMO_LOCATIONS]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(({ id, name, slug, district }) => ({ id, name, slug, district })),
+  );
 }
 
 export async function getLocationBySlugOrName(value: string | undefined) {
   if (!value) return null;
+  const v = value.toLowerCase();
+  return withDemo(() => findLocation(value), () => DEMO_LOCATIONS.find((l) => l.slug === v || l.name.toLowerCase() === v) ?? null);
+}
+
+function findLocation(value: string) {
   return db.location.findFirst({
     where: {
       isActive: true,
@@ -130,17 +144,21 @@ export async function searchRides(params: {
     departureFilter = { gte: start > earliest ? start : earliest, lt: end };
   }
 
-  const trips = await db.trip.findMany({
-    where: {
-      status: "SCHEDULED",
-      departureAt: departureFilter,
-      driver: { status: "VERIFIED", user: { status: "ACTIVE" } },
-      AND: [{ stops: { some: { locationId: from.id } } }, { stops: { some: { locationId: to.id } } }],
-    },
-    include: rideCardInclude,
-    orderBy: { departureAt: "asc" },
-    take: 60,
-  });
+  const trips: RideRow[] = await withDemo(
+    () =>
+      db.trip.findMany({
+        where: {
+          status: "SCHEDULED",
+          departureAt: departureFilter,
+          driver: { status: "VERIFIED", user: { status: "ACTIVE" } },
+          AND: [{ stops: { some: { locationId: from.id } } }, { stops: { some: { locationId: to.id } } }],
+        },
+        include: rideCardInclude,
+        orderBy: { departureAt: "asc" },
+        take: 60,
+      }),
+    () => demoTripsMatching(from.id, to.id, departureFilter),
+  );
 
   const summaries = trips
     .map((t) => toSummary(t, from.id, to.id))
@@ -156,17 +174,22 @@ export async function searchRides(params: {
 }
 
 export async function getUpcomingRidesForRoute(originId: string, destinationId: string, take = 6) {
-  const trips = await db.trip.findMany({
-    where: {
-      status: "SCHEDULED",
-      departureAt: { gt: new Date(Date.now() + BOOKING_CUTOFF_MINUTES * 60_000) },
-      driver: { status: "VERIFIED", user: { status: "ACTIVE" } },
-      AND: [{ stops: { some: { locationId: originId } } }, { stops: { some: { locationId: destinationId } } }],
-    },
-    include: rideCardInclude,
-    orderBy: { departureAt: "asc" },
-    take: take * 2,
-  });
+  const after = new Date(Date.now() + BOOKING_CUTOFF_MINUTES * 60_000);
+  const trips: RideRow[] = await withDemo(
+    () =>
+      db.trip.findMany({
+        where: {
+          status: "SCHEDULED",
+          departureAt: { gt: after },
+          driver: { status: "VERIFIED", user: { status: "ACTIVE" } },
+          AND: [{ stops: { some: { locationId: originId } } }, { stops: { some: { locationId: destinationId } } }],
+        },
+        include: rideCardInclude,
+        orderBy: { departureAt: "asc" },
+        take: take * 2,
+      }),
+    () => demoTripsMatching(originId, destinationId, { gt: after }),
+  );
   return trips
     .map((t) => toSummary(t, originId, destinationId))
     .filter((s): s is RideSummary => s !== null && s.availableSeats > 0)
@@ -174,8 +197,12 @@ export async function getUpcomingRidesForRoute(originId: string, destinationId: 
 }
 
 /** Full ride detail for the public ride page (no passenger PII). */
-export async function getRideDetail(tripId: string) {
-  const trip = await db.trip.findUnique({
+export async function getRideDetail(tripId: string): Promise<RideDetail | null> {
+  return withDemo(() => findRideDetail(tripId), () => demoTrips().find((t) => t.id === tripId) ?? null);
+}
+
+function findRideDetail(tripId: string) {
+  return db.trip.findUnique({
     where: { id: tripId },
     include: {
       ...rideCardInclude,
@@ -202,23 +229,41 @@ export async function getRideDetail(tripId: string) {
       },
     },
   });
-  return trip;
 }
 
-export type RideDetail = NonNullable<Awaited<ReturnType<typeof getRideDetail>>>;
+export type RideDetail = NonNullable<Awaited<ReturnType<typeof findRideDetail>>>;
 
 export async function getPopularRoutes() {
-  return db.route.findMany({
-    where: { isActive: true },
-    orderBy: [{ isPopular: "desc" }, { createdAt: "asc" }],
-    include: { origin: true, destination: true, stops: { include: { location: true }, orderBy: { sequence: "asc" } } },
-    take: 8,
-  });
+  return withDemo(
+    () =>
+      db.route.findMany({
+        where: { isActive: true },
+        orderBy: [{ isPopular: "desc" }, { createdAt: "asc" }],
+        include: { origin: true, destination: true, stops: { include: { location: true }, orderBy: { sequence: "asc" } } },
+        take: 8,
+      }),
+    () => [...DEMO_ROUTES].sort((a, b) => Number(b.isPopular) - Number(a.isPopular)),
+  );
 }
 
 export async function getRouteBySlug(slug: string) {
-  return db.route.findFirst({
-    where: { slug, isActive: true },
-    include: { origin: true, destination: true, stops: { include: { location: true }, orderBy: { sequence: "asc" } } },
-  });
+  return withDemo(
+    () =>
+      db.route.findFirst({
+        where: { slug, isActive: true },
+        include: { origin: true, destination: true, stops: { include: { location: true }, orderBy: { sequence: "asc" } } },
+      }),
+    () => DEMO_ROUTES.find((r) => r.slug === slug) ?? null,
+  );
+}
+
+/** Demo-mode equivalent of the trip search query. */
+function demoTripsMatching(fromId: string, toId: string, when: Prisma.DateTimeFilter): RideRow[] {
+  const gt = when.gt instanceof Date ? when.gt : undefined;
+  const gte = when.gte instanceof Date ? when.gte : undefined;
+  const lt = when.lt instanceof Date ? when.lt : undefined;
+  return demoTrips()
+    .filter((t) => (!gt || t.departureAt > gt) && (!gte || t.departureAt >= gte) && (!lt || t.departureAt < lt))
+    .filter((t) => t.stops.some((s) => s.locationId === fromId) && t.stops.some((s) => s.locationId === toId))
+    .sort((a, b) => a.departureAt.getTime() - b.departureAt.getTime());
 }

@@ -3,7 +3,7 @@
  *
  *   npm run db:seed
  *
- * Creates locations, 4 launch routes, 10 drivers (+ driver@demo.com),
+ * Creates locations, 6 launch routes (Dehradun ↔ Chamoli / Rudraprayag / Srinagar), 10 drivers (+ driver@demo.com),
  * 20 vehicles, 50 passengers (+ passenger@demo.com), 20 trips, bookings and
  * reviews, and admin@demo.com. All demo accounts share DEMO_PASSWORD.
  *
@@ -54,6 +54,9 @@ const LOCATIONS = [
   { name: "Guptkashi", district: "Rudraprayag", latitude: 30.5245, longitude: 79.079 },
   { name: "Haridwar", district: "Haridwar", latitude: 29.9457, longitude: 78.1642 },
   { name: "Kirtinagar", district: "Tehri Garhwal", latitude: 30.2115, longitude: 78.7455 },
+  { name: "Gauchar", district: "Chamoli", latitude: 30.2864, longitude: 79.1534 },
+  { name: "Karnaprayag", district: "Chamoli", latitude: 30.2617, longitude: 79.217 },
+  { name: "Chamoli", district: "Chamoli", latitude: 30.4036, longitude: 79.321 },
 ];
 
 type StopDef = { name: string; km: number; min: number; fare: number; point: string };
@@ -70,6 +73,32 @@ type RouteDef = {
 };
 
 const ROUTES: RouteDef[] = [
+  {
+    from: "Dehradun", to: "Chamoli", km: 254, min: 500, fare: 900, popular: true,
+    boarding: ["ISBT Dehradun, Gate 2", "Clock Tower (Ghanta Ghar)", "Jogiwala Chowk"],
+    drop: ["Chamoli Bus Stand", "Gopeshwar Road, Chamoli"],
+    stops: [
+      { name: "Rishikesh", km: 45, min: 75, fare: 150, point: "Natraj Chowk, Rishikesh" },
+      { name: "Devprayag", km: 115, min: 210, fare: 400, point: "Devprayag Taxi Stand" },
+      { name: "Srinagar", km: 150, min: 285, fare: 520, point: "Srinagar Bus Adda" },
+      { name: "Rudraprayag", km: 183, min: 360, fare: 650, point: "Rudraprayag Bus Stand" },
+      { name: "Gauchar", km: 203, min: 400, fare: 720, point: "Gauchar Market" },
+      { name: "Karnaprayag", km: 214, min: 425, fare: 760, point: "Karnaprayag Sangam Bazaar" },
+    ],
+  },
+  {
+    from: "Chamoli", to: "Dehradun", km: 254, min: 500, fare: 900, popular: true,
+    boarding: ["Chamoli Bus Stand", "Gopeshwar Road, Chamoli"],
+    drop: ["ISBT Dehradun", "Clock Tower (Ghanta Ghar)", "Jogiwala Chowk"],
+    stops: [
+      { name: "Karnaprayag", km: 40, min: 75, fare: 150, point: "Karnaprayag Sangam Bazaar" },
+      { name: "Gauchar", km: 51, min: 100, fare: 190, point: "Gauchar Market" },
+      { name: "Rudraprayag", km: 71, min: 140, fare: 260, point: "Rudraprayag Bus Stand" },
+      { name: "Srinagar", km: 104, min: 215, fare: 400, point: "Srinagar Bus Adda" },
+      { name: "Devprayag", km: 139, min: 290, fare: 520, point: "Devprayag Taxi Stand" },
+      { name: "Rishikesh", km: 209, min: 425, fare: 760, point: "Natraj Chowk, Rishikesh" },
+    ],
+  },
   {
     from: "Dehradun", to: "Rudraprayag", km: 183, min: 360, fare: 650, popular: true,
     boarding: ["ISBT Dehradun, Gate 2", "Clock Tower (Ghanta Ghar)", "Jogiwala Chowk"],
@@ -114,13 +143,13 @@ const DRIVERS = [
   { name: "Ramesh Singh Negi", email: "driver@demo.com", phone: "9837012345", base: "Rudraprayag", years: 14, langs: "Hindi, Garhwali" },
   { name: "Mahendra Rawat", email: "mahendra.rawat@seed.pahadiseat.in", phone: "9412011223", base: "Dehradun", years: 11, langs: "Hindi, Garhwali, English" },
   { name: "Sunil Bisht", email: "sunil.bisht@seed.pahadiseat.in", phone: "9759022334", base: "Srinagar", years: 8, langs: "Hindi, Garhwali" },
-  { name: "Govind Semwal", email: "govind.semwal@seed.pahadiseat.in", phone: "9997033445", base: "Rudraprayag", years: 17, langs: "Hindi, Garhwali" },
+  { name: "Govind Semwal", email: "govind.semwal@seed.pahadiseat.in", phone: "9997033445", base: "Chamoli", years: 17, langs: "Hindi, Garhwali" },
   { name: "Prakash Bhatt", email: "prakash.bhatt@seed.pahadiseat.in", phone: "8126044556", base: "Dehradun", years: 6, langs: "Hindi, English" },
   { name: "Dinesh Chauhan", email: "dinesh.chauhan@seed.pahadiseat.in", phone: "9568055667", base: "Rishikesh", years: 9, langs: "Hindi, Garhwali" },
   { name: "Rajendra Panwar", email: "rajendra.panwar@seed.pahadiseat.in", phone: "7579066778", base: "Srinagar", years: 12, langs: "Hindi, Garhwali" },
   { name: "Vinod Nautiyal", email: "vinod.nautiyal@seed.pahadiseat.in", phone: "9412077889", base: "Rudraprayag", years: 20, langs: "Hindi, Garhwali, Kumaoni" },
   { name: "Kuldeep Rana", email: "kuldeep.rana@seed.pahadiseat.in", phone: "8755088990", base: "Dehradun", years: 4, langs: "Hindi, English" },
-  { name: "Harish Kandari", email: "harish.kandari@seed.pahadiseat.in", phone: "9634099001", base: "Rudraprayag", years: 7, langs: "Hindi, Garhwali" },
+  { name: "Harish Kandari", email: "harish.kandari@seed.pahadiseat.in", phone: "9634099001", base: "Chamoli", years: 7, langs: "Hindi, Garhwali" },
 ];
 
 const VEHICLE_MODELS: { type: VehicleType; model: string; seats: number }[] = [
@@ -258,7 +287,7 @@ async function main() {
         role: "PASSENGER",
         isSeedData: true,
         createdAt: istAt(-int(5, 90), int(8, 21)),
-        passengerProfile: { create: { homeLocationId: loc[pick(["Dehradun", "Rudraprayag", "Srinagar", "Rishikesh"])]!.id } },
+        passengerProfile: { create: { homeLocationId: loc[pick(["Dehradun", "Chamoli", "Rudraprayag", "Srinagar", "Rishikesh"])]!.id } },
       },
     });
     passengers.push({ id: u.id, name: u.name, phone: u.phone });
@@ -353,13 +382,15 @@ async function main() {
 
   // Trips: 14 upcoming + 6 completed = 20
   const plans: { daysFromToday: number; hour: number; minute: number; routeIdx: number; driverIdx: number; past: boolean }[] = [];
+  // Route index: 0 Dehradun→Chamoli, 1 Chamoli→Dehradun, 2 Dehradun→Rudraprayag,
+  // 3 Rudraprayag→Dehradun, 4 Dehradun→Srinagar, 5 Srinagar→Dehradun.
   const upcomingSlots = [
-    [1, 6, 0, 0], [1, 7, 0, 0], [1, 8, 30, 2], [1, 7, 30, 1], [1, 9, 0, 3],
-    [2, 6, 30, 0], [2, 8, 0, 1], [2, 7, 0, 2], [3, 7, 0, 0], [3, 10, 0, 1],
-    [4, 6, 0, 0], [5, 8, 0, 1], [6, 7, 0, 3], [7, 6, 30, 0],
+    [1, 5, 30, 0], [1, 7, 0, 2], [1, 8, 30, 4], [1, 6, 0, 1], [1, 9, 0, 5],
+    [2, 6, 0, 0], [2, 8, 0, 3], [2, 6, 30, 1], [3, 7, 0, 2], [3, 5, 30, 0],
+    [4, 6, 0, 2], [5, 6, 0, 1], [6, 7, 0, 4], [7, 5, 30, 0],
   ] as const;
   upcomingSlots.forEach(([d, h, m, r], i) => plans.push({ daysFromToday: d, hour: h, minute: m, routeIdx: r, driverIdx: i % drivers.length, past: false }));
-  const pastSlots = [[-1, 7, 0, 0], [-2, 8, 0, 1], [-3, 6, 30, 2], [-5, 7, 0, 0], [-8, 9, 0, 1], [-12, 7, 0, 3]] as const;
+  const pastSlots = [[-1, 6, 0, 0], [-2, 8, 0, 3], [-3, 6, 30, 1], [-5, 7, 0, 2], [-8, 9, 0, 4], [-12, 7, 0, 5]] as const;
   pastSlots.forEach(([d, h, m, r], i) => plans.push({ daysFromToday: d, hour: h, minute: m, routeIdx: r, driverIdx: i % drivers.length, past: true }));
   // Make sure the demo driver has a good spread of trips.
   plans[1]!.driverIdx = 0;

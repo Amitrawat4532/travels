@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarDays, Car, Clock, Languages, Luggage, Route, ShieldC
 import { getRideDetail } from "@/server/queries/rides";
 import { getCurrentUser } from "@/auth/session";
 import { track } from "@/server/analytics";
+import { isDemoMode } from "@/server/demo";
 import { cancellationPolicyText, segmentFarePaise } from "@/server/services/bookings";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar, Rating, Skeleton, Stars, KeyValue } from "@/components/ui/misc";
@@ -84,7 +85,8 @@ async function RideContent({
   });
 
   let closedReason: string | undefined;
-  if (trip.status === "CANCELLED") closedReason = "The driver cancelled this ride.";
+  if (isDemoMode()) closedReason = "Demo preview — yeh sample ride hai. Booking jaldi shuru hogi.";
+  else if (trip.status === "CANCELLED") closedReason = "The driver cancelled this ride.";
   else if (trip.status === "COMPLETED") closedReason = "This ride is completed.";
   else if (trip.status === "IN_PROGRESS" || trip.departureAt.getTime() - BOOKING_CUTOFF_MINUTES * 60_000 <= now.getTime())
     closedReason = "Booking is closed — this ride departs soon or has left.";

@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { createHash, randomBytes } from "node:crypto";
 import type { Role } from "@prisma/client";
 import { db } from "@/server/db";
+import { isDbUnavailableError, isDemoMode } from "@/server/demo";
 
 export const SESSION_COOKIE = "ps_session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
@@ -67,9 +68,24 @@ export async function destroyAllSessionsForUser(userId: string): Promise<void> {
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const jar = await cookies();
   const token = jar.get(SESSION_COOKIE)?.value;
-  if (!token) return null;
+  if (!token || isDemoMode()) return null;
 
-  const session = await db.session.findUnique({
+  const session = await findSession(token);
+  if (session === "unavailable") return null;
+  return resolveSession(session);
+});
+
+async function findSession(token: string) {
+  try {
+    return await querySession(token);
+  } catch (e) {
+    if (isDbUnavailableError(e)) return "unavailable" as const;
+    throw e;
+  }
+}
+
+function querySession(token: string) {
+  return db.session.findUnique({
     where: { tokenHash: hashToken(token) },
     include: {
       user: {
@@ -85,7 +101,9 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
       },
     },
   });
+}
 
+function resolveSession(session: Awaited<ReturnType<typeof querySession>>): SessionUser | null {
   const now = Date.now();
   if (!session || session.expiresAt.getTime() < now) return null;
   if (session.user.status === "SUSPENDED") return null;
@@ -102,4 +120,4 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
 
   const { id, name, email, phone, role, avatarKey } = session.user;
   return { id, name, email, phone, role, avatarKey };
-});
+}

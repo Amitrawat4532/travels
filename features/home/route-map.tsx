@@ -118,7 +118,7 @@ export function RouteMap({ stops, totalKm, totalMinutes }: { stops: RouteMapStop
             );
           })}
           {/* North arrow + scale bar (straight-line distance) */}
-          <g transform={`translate(${W - 34} 36)`} fill="#e8efe9" fillOpacity="0.7">
+          <g transform={`translate(${W - 30} ${H - 40})`} fill="#e8efe9" fillOpacity="0.7">
             <path d="M0 -14 6 4 0 0 -6 4Z" />
             <text y="20" textAnchor="middle" fontSize="11" fontWeight={700}>
               N

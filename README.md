@@ -2,7 +2,7 @@
 
 **Kal ghar jaana hai?** Pahadi Seat is a hyperlocal shared-taxi seat-booking platform for Uttarakhand. It connects passengers who need a seat with verified local drivers who are already driving that route and have empty seats.
 
-Launch corridor: **Dehradun ↔ Rudraprayag** (via Rishikesh, Devprayag, Srinagar), plus **Dehradun ↔ Srinagar**. Admins can add more routes and towns from the admin panel.
+Launch corridor: **Dehradun ↔ Chamoli** (via Rishikesh, Devprayag, Srinagar, Rudraprayag, Gauchar, Karnaprayag), plus **Dehradun ↔ Rudraprayag** and **Dehradun ↔ Srinagar**. Admins can add more routes and towns from the admin panel.
 
 ---
 
@@ -185,6 +185,10 @@ Create the first admin by registering normally, then promote that account in the
 UPDATE "User" SET role = 'ADMIN' WHERE email = 'you@yourcompany.in';
 ```
 Admins can then verify drivers, approve vehicles and manage routes from `/admin`.
+
+## Demo mode (no database yet)
+
+If `DATABASE_URL` is missing, `DEMO_MODE=true` is set, or the database can't be reached, the public site switches to built-in sample content (`server/demo-data.ts`). The homepage, search, ride details and route pages all work, and a yellow "Demo preview" strip appears at the top. Login, booking and dashboards show a friendly "database not connected" message instead of erroring. Once a real `DATABASE_URL` is set and migrated, the site uses the database automatically.
 
 ## Production deployment
 

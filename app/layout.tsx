@@ -21,13 +21,15 @@ const display = Instrument_Serif({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${APP_NAME} — Dehradun ↔ Rudraprayag shared taxi seats`,
+    default: `${APP_NAME} — Dehradun ↔ Chamoli shared taxi seats`,
     template: `%s · ${APP_NAME}`,
   },
   description:
-    "Kal ghar jaana hai? Apne route ki available seats dekho aur verified local drivers se shared taxi seat book karo. Dehradun, Rishikesh, Srinagar, Rudraprayag.",
+    "Kal ghar jaana hai? Apne route ki available seats dekho aur verified local drivers se shared taxi seat book karo. Dehradun, Rishikesh, Srinagar, Rudraprayag, Chamoli.",
   applicationName: APP_NAME,
   keywords: [
+    "Dehradun to Chamoli taxi",
+    "Chamoli to Dehradun seat",
     "Dehradun to Rudraprayag taxi",
     "shared taxi Uttarakhand",
     "Rudraprayag to Dehradun seat",
@@ -39,7 +41,7 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     locale: "en_IN",
     title: `${APP_NAME} — shared taxi seats across Uttarakhand`,
-    description: "Verified local drivers. Real-time seat availability. Book your seat from Dehradun to Rudraprayag and back.",
+    description: "Verified local drivers. Real-time seat availability. Book your seat from Dehradun to Chamoli, Rudraprayag and back.",
   },
   twitter: { card: "summary_large_image" },
   formatDetection: { telephone: false },

@@ -33,7 +33,7 @@ export function SeatPicker({
   const router = useRouter();
   const [pending, start] = useTransition();
   const available = seats.filter((s) => s.status === "AVAILABLE").map((s) => s.seatNumber);
-  const [selected, setSelected] = useState<number[]>(() => available.slice(0, Math.min(initialCount, available.length)));
+  const [selected, setSelected] = useState<number[]>(() => (bookable ? available.slice(0, Math.min(initialCount, available.length)) : []));
   const [hint, setHint] = useState<string | null>(null);
 
   function toggle(n: number) {

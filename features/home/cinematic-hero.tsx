@@ -46,7 +46,7 @@ const STORY = [
     id: "pahad",
     eyebrow: "01 · Pahad",
     title: "Har mod pe ek kahani.",
-    body: "Dehradun ki ghaati se Rudraprayag ke sangam tak — 180 km ke pahadi raste, jahan har roz sainkdon gaadiyan khaali seats ke saath chalti hain.",
+    body: "Dehradun ki ghaati se Chamoli ki pahadiyon tak — 250 km ke pahadi raste, jahan har roz sainkdon gaadiyan khaali seats ke saath chalti hain.",
     align: "left" as const,
   },
   {
@@ -59,8 +59,8 @@ const STORY = [
   {
     id: "jodna",
     eyebrow: "03 · Jodna",
-    title: "Dehradun se Rudraprayag, seat-by-seat.",
-    body: "Rishikesh, Devprayag, Srinagar — jahan utarna ho, wahan tak ka kiraya. Driver ko pehle se pata, aapko kahan chhodna hai.",
+    title: "Dehradun se Chamoli, seat-by-seat.",
+    body: "Rishikesh, Srinagar, Rudraprayag, Karnaprayag — jahan utarna ho, wahan tak ka kiraya. Driver ko pehle se pata, aapko kahan chhodna hai.",
     align: "left" as const,
   },
 ];
@@ -176,7 +176,7 @@ export function CinematicHero({ search }: { search: ReactNode }) {
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-forest-400 opacity-60" />
             <span className="relative inline-flex size-2 rounded-full bg-forest-500" />
           </span>
-          Now live · Dehradun ↔ Rudraprayag
+          Now live · Dehradun ↔ Chamoli
         </p>
         <h1
           {...rise(0.2)}

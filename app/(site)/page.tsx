@@ -33,7 +33,7 @@ import { RideCard, RideCardSkeleton } from "@/features/rides/ride-card";
 export const metadata: Metadata = {
   title: { absolute: "Pahadi Seat — Kal ghar jaana hai? Book shared taxi seats in Uttarakhand" },
   description:
-    "Dehradun ↔ Rudraprayag shared taxi seats from verified local drivers. See departure time, seats left, boarding point and fare — book your seat in a minute.",
+    "Dehradun ↔ Chamoli and Rudraprayag shared taxi seats from verified local drivers. See departure time, seats left, boarding point and fare — book your seat in a minute.",
   alternates: { canonical: "/" },
 };
 
@@ -67,10 +67,10 @@ function RouteSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24" aria-labelledby="route-heading">
       <Reveal>
-        <SectionHeading eyebrow="The connection" title="Ek raasta, paanch padaav" description="Board at any stop, get down at any stop after it. You pay only for your part of the journey." />
+        <SectionHeading eyebrow="The connection" title="Dehradun se Chamoli, har padaav pe seat" description="Rishikesh, Devprayag, Srinagar, Rudraprayag, Gauchar, Karnaprayag — board at any stop, get down at any stop after it. You pay only for your part of the journey." />
       </Reveal>
       <h2 id="route-heading" className="sr-only">
-        Dehradun to Rudraprayag route
+        Dehradun to Chamoli route
       </h2>
       <Reveal className="mt-10" delay={0.1}>
         <Suspense fallback={<Skeleton className="h-96 rounded-[28px]" />}>
@@ -82,7 +82,7 @@ function RouteSection() {
 }
 
 async function RouteMapLoader() {
-  const route = await getRouteBySlug("dehradun-to-rudraprayag");
+  const route = (await getRouteBySlug("dehradun-to-chamoli")) ?? (await getRouteBySlug("dehradun-to-rudraprayag"));
   if (!route || route.origin.latitude == null || route.destination.latitude == null) return null;
   const all = [
     { loc: route.origin, km: 0, minutes: 0 },
@@ -114,12 +114,12 @@ function NextRidesSection() {
           <Reveal>
             <SectionHeading eyebrow="Available rides" title="Agli gaadiyan, live seats ke saath" />
           </Reveal>
-          <Link href="/search?from=dehradun&to=rudraprayag" className="inline-flex items-center gap-1 text-sm font-semibold text-forest-700 hover:underline">
+          <Link href="/search?from=dehradun&to=chamoli" className="inline-flex items-center gap-1 text-sm font-semibold text-forest-700 hover:underline">
             See all rides <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
         <h2 id="next-rides" className="sr-only">
-          Next rides from Dehradun to Rudraprayag
+          Next rides from Dehradun to Chamoli
         </h2>
         <Suspense
           fallback={
@@ -137,7 +137,7 @@ function NextRidesSection() {
 }
 
 async function NextRides() {
-  const route = await getRouteBySlug("dehradun-to-rudraprayag");
+  const route = (await getRouteBySlug("dehradun-to-chamoli")) ?? (await getRouteBySlug("dehradun-to-rudraprayag"));
   if (!route) return null;
   await connection();
   const rides = await getUpcomingRidesForRoute(route.originId, route.destinationId, 4);
@@ -146,7 +146,7 @@ async function NextRides() {
     return (
       <p className="mt-8 rounded-2xl border border-dashed border-forest-200 p-8 text-center text-muted">
         Is route ke liye abhi koi ride available nahi hai.{" "}
-        <Link href="/search?from=dehradun&to=rudraprayag" className="font-semibold text-forest-700 underline">
+        <Link href={`/search?from=${route.origin.slug}&to=${route.destination.slug}`} className="font-semibold text-forest-700 underline">
           Get notified
         </Link>
       </p>
@@ -222,7 +222,7 @@ function WhyUs() {
     { icon: ShieldCheck, title: "Verified local drivers", text: "Driving licence, RC, insurance and permit checked before a driver can list a ride." },
     { icon: Users, title: "Real-time seat availability", text: "Seats update the moment someone books or cancels. What you see is what's left." },
     { icon: IndianRupee, title: "Transparent pricing", text: "Fare per seat shown upfront — even for partial routes like Dehradun → Srinagar." },
-    { icon: MapPinned, title: "Route-based travel", text: "Board at ISBT, get down at Devprayag or Rudraprayag. Driver knows your stop in advance." },
+    { icon: MapPinned, title: "Route-based travel", text: "Board at ISBT, get down at Srinagar, Rudraprayag or Karnaprayag. Driver knows your stop in advance." },
     { icon: CalendarCheck, title: "Easy booking", text: "Big buttons, simple steps, works on any phone. Pay the driver in cash or UPI at boarding." },
     { icon: Headset, title: "Local support", text: "Real people from Garhwal on call and WhatsApp when plans change." },
   ];

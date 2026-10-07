@@ -20,7 +20,7 @@ export function SearchForm({ locations, defaults, variant = "hero" }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [from, setFrom] = useState(defaults?.from ?? "dehradun");
-  const [to, setTo] = useState(defaults?.to ?? "rudraprayag");
+  const [to, setTo] = useState(defaults?.to ?? "chamoli");
   const today = useClientToday();
   const [pickedDate, setDate] = useState(defaults?.date ?? "");
   // Default to tomorrow once the visitor's clock is known (client only).

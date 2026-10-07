@@ -17,8 +17,9 @@ const columns = [
     links: [
       ["Find a ride", "/search"],
       ["Popular routes", "/routes"],
+      ["Dehradun → Chamoli", "/routes/dehradun-to-chamoli"],
+      ["Chamoli → Dehradun", "/routes/chamoli-to-dehradun"],
       ["Dehradun → Rudraprayag", "/routes/dehradun-to-rudraprayag"],
-      ["Rudraprayag → Dehradun", "/routes/rudraprayag-to-dehradun"],
     ],
   },
   {
@@ -85,7 +86,7 @@ export function SiteFooter() {
         </div>
         <div className="mt-10 flex flex-col gap-2 border-t border-forest-800 pt-6 text-xs text-forest-300 sm:flex-row sm:justify-between">
           <p>© Pahadi Seat · Made in Uttarakhand</p>
-          <p>Dehradun · Rishikesh · Srinagar · Rudraprayag</p>
+          <p>Dehradun · Rishikesh · Srinagar · Rudraprayag · Chamoli</p>
         </div>
       </div>
     </footer>

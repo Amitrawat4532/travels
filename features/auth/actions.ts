@@ -10,13 +10,24 @@ import { fail, zodFieldErrors, type ActionResult } from "@/lib/action-result";
 import { changePasswordSchema, loginSchema, profileSchema, registerSchema } from "@/validation/auth";
 import { track } from "@/server/analytics";
 import { safeAction } from "@/server/safe-action";
+import { DEMO_DISABLED_MESSAGE, isDbUnavailableError, isDemoMode } from "@/server/demo";
 
 function safeNext(next: string | undefined | null): string | null {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return null;
   return next;
 }
 
-export async function loginAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+export async function loginAction(prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  if (isDemoMode()) return fail(DEMO_DISABLED_MESSAGE);
+  try {
+    return await login(prev, formData);
+  } catch (e) {
+    if (isDbUnavailableError(e)) return fail(DEMO_DISABLED_MESSAGE);
+    throw e;
+  }
+}
+
+async function login(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail("Please check the highlighted fields.", zodFieldErrors(parsed.error));
   const { email, password, next } = parsed.data;
@@ -38,7 +49,17 @@ export async function loginAction(_prev: ActionResult, formData: FormData): Prom
   redirect(safeNext(next) ?? homeForRole(user.role));
 }
 
-export async function registerAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+export async function registerAction(prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  if (isDemoMode()) return fail(DEMO_DISABLED_MESSAGE);
+  try {
+    return await register(prev, formData);
+  } catch (e) {
+    if (isDbUnavailableError(e)) return fail(DEMO_DISABLED_MESSAGE);
+    throw e;
+  }
+}
+
+async function register(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const parsed = registerSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail("Please check the highlighted fields.", zodFieldErrors(parsed.error));
   const { name, email, phone, password, role } = parsed.data;
